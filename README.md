@@ -37,11 +37,15 @@
 ### 2. Командная строка (CLI)
 Скрипт можно встраивать в пайплайны или запускать через Планировщик задач. Если переданы аргументы, интерактивное меню пропускается.
 
+![Скриншот настроек](https://github.com/micha1l-31337/media-optimizer/blob/main/MediaOptimizer-1.jpg)
+
+![Скриншот работы скрипта](https://github.com/micha1l-31337/media-optimizer/blob/main/MediaOptimizer-2.jpg)
+
 **Примеры запуска:**
 
 ```cmd
 :: Полная обработка архива с сохранением в отдельную папку
-media_optimizer.bat -source "D:\Raw_Photos" -dest "Z:\Archive_Optimized" -video_mode 2
+media_optimizer.bat -source "D:\Raw_Photos" -dest "Z:\Archive_Optimized"
 
 :: Только сжатие видео в текущей папке (фото копируются)
 media_optimizer.bat -process_photos 0 -process_videos 1 -video_px 1080
