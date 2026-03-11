@@ -2,11 +2,11 @@
 setlocal EnableDelayedExpansion
 :: Включаем UTF-8 для корректной работы с кириллицей
 chcp 65001 >nul
-title Media Optimizer v5.3 STABLE - Initializing...
+title Media Optimizer v5.4 STABLE - Initializing...
 cd /d "%~dp0"
 
 :: =================================================================================================
-:: MEDIA OPTIMIZER v5.3 STABLE - ПОЛНАЯ ДОКУМЕНТАЦИЯ
+:: MEDIA OPTIMIZER v5.4 STABLE - ПОЛНАЯ ДОКУМЕНТАЦИЯ
 :: =================================================================================================
 :: НАЗНАЧЕНИЕ:
 ::   Пакетная оптимизация медиафайлов с сохранением структуры папок.
@@ -14,73 +14,11 @@ cd /d "%~dp0"
 ::   КОПИРОВАНИЕ (без изменений), ПРОПУСК (игнорирование).
 ::   Обработанные файлы сохраняются с настраиваемым суффиксом.
 ::
-:: КЛЮЧЕВЫЕ ОСОБЕННОСТИ:
-::   • Трёхпозиционные переключатели для фото/видео/прочих файлов
-::   • Ресайз фото по ДЛИННОЙ стороне, видео по МЕНЬШЕЙ стороне (сохранение пропорций)
-::   • Автоопределение GPU NVIDIA (NVENC) для ускорения конвертации видео
-::   • Полная автоматизация через параметры командной строки БЕЗ меню
-::   • Поддержка Drag&Drop: папки, отдельные файлы, группы файлов
-::   • Защита от повторной обработки: файлы с суффиксом автоматически пропускаются
-::   • Обход ограничений длинных путей (>260 символов) через префикс \\?\
-::   • Проверка существования целевого файла перед обработкой (статус [ПРОПУЩЕН])
-::
 :: ПОДДЕРЖИВАЕМЫЕ ФОРМАТЫ:
-:: 
 ::   Фото (FFmpeg -> JPG): JPG, JPEG, PNG, GIF, TIFF, WebP
 ::   Фото (ImageMagick -> JPG): HEIC, HEIF, AVIF, SVG, FLIF, BPG
 ::   Видео: MP4, MKV, WMV, WEBM, M4V, TS, MTS -> конвертация в MP4 (H.264/H.265)
 ::   Прочие: Любые файлы (копируются без изменений при включённой опции)
-::
-:: =================================================================================================
-:: ПАРАМЕТРЫ КОМАНДНОЙ СТРОКИ ДЛЯ АВТОМАТИЧЕСКОГО ЗАПУСКА (БЕЗ МЕНЮ)
-:: =================================================================================================
-:: При указании ЛЮБОГО параметра обработка запускается автоматически без показа меню.
-::
-:: ОСНОВНЫЕ ПАРАМЕТРЫ:
-::   -source "путь"          -> папка-источник (рекурсивно со всеми подпапками)
-:: Пример: -source "D:\Фото 2024"
-::
-::   -dest "путь"            -> папка назначения (если не указана — создаётся "optimized")
-:: Пример: -dest "E:\Архив"
-::
-::   -process_photos N       -> режим фото: 1=сжимать, 0=копировать, -1=пропускать
-:: Пример: -process_photos 1
-::
-::   -process_videos N       -> режим видео: 1=сжимать, 0=копировать, -1=пропускать
-:: Пример: -process_videos 1
-::
-::   -copy_others N      
-::     -> прочие файлы: 1=копировать, 0=пропускать
-:: Пример: -copy_others 0
-::
-::   -photo_px N             -> макс.
-:: сторона фото в пикселях (длинная сторона)
-:: Рекомендуемые значения: 1280 (HD), 1920 (FullHD), 3840 (4K), 4320 (8K)
-:: Пример: -photo_px 1920
-::
-::   -video_px N             -> целевая МЕНЬШАЯ сторона видео в пикселях
-:: Рекомендуемые значения: 720 (HD), 1080 (FullHD), 1440 (2K), 2160 (4K)
-:: Пример: -video_px 1080
-::
-::   -video_mode N           -> кодек видео: 1=H.264 (совместимость), 2=H.265 (макс. сжатие)
-:: Пример: -video_mode 2
-::
-::   -video_bitrate "знач"   -> максимальный битрейт видео (ограничение пиковой нагрузки)
-:: Формат: число + суффикс (M=Мбит/сек, K=Кбит/сек)
-:: Рекомендуемые значения: "50M" (4K), "20M" (FullHD), "10M" (HD), "5M" (SD)
-:: Пример: -video_bitrate "20M"
-::
-::   -jpg_quality N          -> качество JPEG при сжатии (только для JPG/JPEG через FFmpeg)
-:: Диапазон: 2-31 (чем меньше — тем выше качество)
-:: Рекомендуемые значения: 2 (архив), 5 (оптимум), 10 (хорошее сжатие), 23 (стандарт)
-:: Пример: -jpg_quality 5
-::
-::   -suffix "суффикс"       -> суффикс для переименования обработанных файлов
-:: По умолчанию: "_resized"
-:: Пример: -suffix "_opt"  -> "photo.jpg" -> "photo_opt.jpg"
-::
-::   -auto              
-::      -> принудительный автозапуск (даже без других параметров)
 ::
 :: =================================================================================================
 
@@ -102,70 +40,38 @@ set "C_PURPLE=%ESC%[95m"
 :: -------------------------------------------------------------------------------------------------
 :: НАСТРОЙКИ ПО УМОЛЧАНИЮ
 :: -------------------------------------------------------------------------------------------------
-:: 
-:: === ФОТОГРАФИИ ===
 set "IMG_MAX_SIDE=4320"
-:: Максимальный размер ДЛИННОЙ стороны фото в пикселях после ресайза.
-
 set "IMG_Q_FFMPEG=5"        
-:: Качество JPEG при сжатии через FFmpeg.
-
 set "IMG_Q_MAGICK=85"      
-:: Качество JPEG при конвертации через ImageMagick.
 
-:: === ВИДЕО ===
 set "VID_TARGET_H=1080"
-:: Целевая МЕНЬШАЯ сторона видео в пикселях (сохранение пропорций).
-
 set "VID_PRESET_MODE=2" 
-:: Выбор ВИДЕОКОДЕКА: 1 = H.264/AVC, 2 = H.265/HEVC
-
 set "VID_FPS=30"            
-:: Целевая частота кадров.
-
 set "VID_MAXRATE=20M"       
-:: Максимальный битрейт видео.
-
 set "VID_BUFSIZE=40M"       
-:: Размер буфера для контроля битрейта.
-
 set "VID_CRF_H264=20" 
-:: Постоянное качество для H.264 (CRF).
-
 set "VID_CRF_H265=24" 
-:: Постоянное качество для H.265 (CRF).
-
 set "VID_AUDIO_CODEC=aac" 
-:: Аудиокодек ffmpeg.
-
 set "VID_AUDIO_BITRATE=192k"
-:: Битрейт аудио.
 
 set "SUFFIX_RESIZED=_resized"
-:: Суффикс для переименования обработанных файлов.
- 
-set "AUTO_BACKUP_ROOT=F:\PHOTO\"
-:: Корневая папка для сохранения результатов.
-:: Если пусто ("") — создаётся подпапка "optimized" в исходной директории.
-
+set "AUTO_BACKUP_ROOT="
 set "TEMP_LIST=%TEMP%\media_list_%RANDOM%.txt" 
-:: Временный файл для хранения списка всех файлов.
-
 set "IN_DIR=%CD%"           
-:: Папка-источник по умолчанию.
 
-:: === РЕЖИМЫ ОБРАБОТКИ ===
-set "PROCESS_PHOTOS=1"      :: Режим обработки ФОТО: 1=сжимать, 0=копировать, -1=пропускать
-set "PROCESS_VIDEOS=1"      :: Режим обработки ВИДЕО: 1=сжимать, 0=копировать, -1=пропускать
-set "COPY_OTHERS=1"         :: Обработка ПРОЧИХ ФАЙЛОВ: 1=копировать, 0=пропускать
+set "PROCESS_PHOTOS=1"
+set "PROCESS_VIDEOS=1"
+set "COPY_OTHERS=1"
 
 :: =================================================================================================
 ::      ПРОВЕРКА ВХОДЯЩИХ АРГУМЕНТОВ И ПОДГОТОВКА К АВТОЗАПУСКУ
 :: =================================================================================================
 :PARSE_ARGS
 set "AUTO_START=0"
+set "IS_DRAG_FILES=0"
+if exist "!TEMP_LIST!" del "!TEMP_LIST!" >nul 2>&1
 
-if "%~1"=="" goto CHECK_DRAG_DROP
+if "%~1"=="" goto MAIN_MENU
 
 :ARG_LOOP
 if "%~1"=="" goto CHECK_AUTO_START
@@ -183,33 +89,25 @@ if /i "%~1"=="-jpg_quality"    set "IMG_Q_FFMPEG=%~2" & set "AUTO_START=1" & shi
 if /i "%~1"=="-suffix"         set "SUFFIX_RESIZED=%~2" & set "AUTO_START=1" & shift & shift & goto ARG_LOOP
 if /i "%~1"=="-auto"           set "AUTO_START=1" & shift & goto ARG_LOOP
 
-if exist "%~1\" (
-    set "DRAG_PATH=%~1"
+:: Проверка на перетаскивание файлов или папок
+set "ITEM_PATH=%~1"
+if exist "!ITEM_PATH!\" (
+    :: Это папка
+    if "!IS_DRAG_FILES!"=="0" set "IN_DIR=!ITEM_PATH!"
     set "AUTO_START=1"
-    goto PROCESS_DRAG_DROP
-)
-if exist "%~1" (
-    set "DRAG_FILES=!DRAG_FILES! "%~1""
+) else if exist "!ITEM_PATH!" (
+    :: Это файл
+    set "IS_DRAG_FILES=1"
     set "AUTO_START=1"
-    shift
-    goto ARG_LOOP
+    echo !ITEM_PATH!>>"!TEMP_LIST!"
+    :: Устанавливаем IN_DIR по первому файлу для корректного сохранения рядом
+    if "!IN_DIR!"=="%CD%" (
+        for %%I in ("!ITEM_PATH!") do set "IN_DIR=%%~dpI"
+    )
 )
 
 shift
 goto ARG_LOOP
-
-:CHECK_DRAG_DROP
-goto MAIN_MENU
-
-:PROCESS_DRAG_DROP
-set "DRAG_PATH=%~1"
-set "DRAG_PATH=!DRAG_PATH:"=!"
-if exist "!DRAG_PATH!\" (
-    set "IN_DIR=!DRAG_PATH!"
-    goto MAIN_MENU
-)
-set "IN_DIR=%CD%"
-goto MAIN_MENU
 
 :CHECK_AUTO_START
 if "!AUTO_START!"=="1" goto SCAN_PREPARE
@@ -229,7 +127,7 @@ if "!COPY_OTHERS!"=="1" (set "TXT_COPY=%C_YELLOW%КОПИРОВАТЬ%C_RESET%")
 if "!VID_PRESET_MODE!"=="1" (set "V_NAME=H.264 [Совместимость]") else (set "V_NAME=H.265 [Макс. сжатие]")
 
 cls
-echo %C_WHITE%MEDIA OPTIMIZER v5.3 STABLE%C_RESET%
+echo %C_WHITE%MEDIA OPTIMIZER v5.4 STABLE%C_RESET%
 echo ------------------------------------------------------------------------------
 echo %C_WHITE%[1] Источник:%C_RESET%       "!DISPLAY_IN!\"
 if "!AUTO_BACKUP_ROOT!"=="" (
@@ -374,10 +272,16 @@ if "!IN_DIR:~-1!"=="\" set "IN_DIR=!IN_DIR:~0,-1!"
 
 for %%I in ("!IN_DIR!") do set "CURRENT_FOLDER_NAME=%%~nxI"
 
-set "TARGET_DIR=!IN_DIR!\optimized"
 set "SAME_FOLDER_MODE=0"
 if "!AUTO_BACKUP_ROOT!"=="" (
     set "SAME_FOLDER_MODE=1"
+    if "!IS_DRAG_FILES!"=="1" (
+        :: Для перетащенных файлов сохраняем прямо в их родную папку
+        set "TARGET_DIR=!IN_DIR!"
+    ) else (
+        :: Для папок создаем подпапку optimized
+        set "TARGET_DIR=!IN_DIR!\optimized"
+    )
 ) else (
     set "ROOT_TMP=!AUTO_BACKUP_ROOT!"
     if "!ROOT_TMP:~-1!"=="\" set "ROOT_TMP=!ROOT_TMP:~0,-1!"
@@ -385,11 +289,13 @@ if "!AUTO_BACKUP_ROOT!"=="" (
 )
 
 cls
-echo %C_CYAN%[1/4] Сканирование директории:%C_RESET%
+echo %C_CYAN%[1/4] Подготовка списка файлов...%C_RESET%
 echo       "!IN_DIR!\"
-if exist "!TEMP_LIST!" del "!TEMP_LIST!"
 
-dir /b /s /a-d "!IN_DIR!\*.*" > "!TEMP_LIST!" 2>nul
+if "!IS_DRAG_FILES!"=="0" (
+    if exist "!TEMP_LIST!" del "!TEMP_LIST!"
+    dir /b /s /a-d "!IN_DIR!\*.*" > "!TEMP_LIST!" 2>nul
+)
 
 :CHECK_FILES
 echo %C_CYAN%[2/4] Анализ и оценка...%C_RESET%
@@ -401,7 +307,11 @@ set "CNT_DIRS=0"
 
 if not exist "!TEMP_LIST!" goto NO_FILES
 
-for /f %%A in ('dir /b /s /ad "!IN_DIR!" 2^>nul ^| find /c /v ""') do set "CNT_DIRS=%%A"
+if "!IS_DRAG_FILES!"=="0" (
+    for /f %%A in ('dir /b /s /ad "!IN_DIR!" 2^>nul ^| find /c /v ""') do set "CNT_DIRS=%%A"
+) else (
+    set "CNT_DIRS=0"
+)
 
 for /f "usebackq delims=" %%A in ("!TEMP_LIST!") do (
     set "TMP_EXT=%%~xA"
@@ -441,7 +351,7 @@ if !TIME_EST_MIN! LSS 1 set "TIME_EST_MIN=<1"
 if !TOTAL_FILES! equ 0 goto NO_FILES
 
 echo.
-echo %C_WHITE%Найдено:%C_RESET% !TOTAL_FILES! файлов в !CNT_DIRS! папках.
+echo %C_WHITE%Найдено:%C_RESET% !TOTAL_FILES! файлов в очередь на обработку.
 echo   - Фото для FFmpeg:    !CNT_JPG!
 echo   - Фото для Magick:   !CNT_HEIC!
 echo   - Видео:        !CNT_VID!
@@ -517,7 +427,6 @@ echo %C_YELLOW%[!CURRENT_IDX!/!TOTAL_TASKS!]%C_RESET% %C_YELLOW%[КОПИЯ]%C_R
 goto :EOF
 
 :W_JPG
-:: Все файлы FFmpeg-потока конвертируются в JPG
 set "FULL_DEST=!FINAL_DIR!!F_NAME!!SUFFIX_RESIZED!.jpg"
 
 if exist "!FULL_DEST!" (
@@ -633,12 +542,12 @@ for /f "usebackq delims=" %%F in ("!TEMP_LIST!") do (
 
 if exist "!TEMP_LIST!" del "!TEMP_LIST!" >nul
 
-title Media Optimizer v5.3 STABLE - ГОТОВО
+title Media Optimizer v5.4 STABLE - ГОТОВО
 echo ------------------------------------------------------------------------------
 echo.
 echo %C_GREEN%ГОТОВО! Обработано файлов: !CURRENT_IDX!%C_RESET%
 echo Папка результата: "!TARGET_DIR!\"
-start "" "!TARGET_DIR!"
+if "!IS_DRAG_FILES!"=="0" start "" "!TARGET_DIR!"
 pause
 exit
 
