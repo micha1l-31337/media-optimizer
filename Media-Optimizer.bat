@@ -2,11 +2,11 @@
 setlocal EnableDelayedExpansion
 :: Включаем UTF-8 для корректной работы с кириллицей
 chcp 65001 >nul
-title Media Optimizer v5.4 STABLE - Initializing...
+title Media Optimizer v5.5 STABLE - Initializing...
 cd /d "%~dp0"
 
 :: =================================================================================================
-:: MEDIA OPTIMIZER v5.4 STABLE - ПОЛНАЯ ДОКУМЕНТАЦИЯ
+:: MEDIA OPTIMIZER v5.5 STABLE - ПОЛНАЯ ДОКУМЕНТАЦИЯ
 :: =================================================================================================
 :: НАЗНАЧЕНИЕ:
 ::   Пакетная оптимизация медиафайлов с сохранением структуры папок.
@@ -89,21 +89,20 @@ if /i "%~1"=="-jpg_quality"    set "IMG_Q_FFMPEG=%~2" & set "AUTO_START=1" & shi
 if /i "%~1"=="-suffix"         set "SUFFIX_RESIZED=%~2" & set "AUTO_START=1" & shift & shift & goto ARG_LOOP
 if /i "%~1"=="-auto"           set "AUTO_START=1" & shift & goto ARG_LOOP
 
-:: Проверка на перетаскивание файлов или папок
-set "ITEM_PATH=%~1"
-if exist "!ITEM_PATH!\" (
-    :: Это папка
-    if "!IS_DRAG_FILES!"=="0" set "IN_DIR=!ITEM_PATH!"
-    set "AUTO_START=1"
-) else if exist "!ITEM_PATH!" (
-    :: Это файл
+if exist "%~1\" (
+    set "IN_DIR=%~1"
+    shift
+    goto ARG_LOOP
+) else if exist "%~1" (
     set "IS_DRAG_FILES=1"
     set "AUTO_START=1"
-    echo !ITEM_PATH!>>"!TEMP_LIST!"
-    :: Устанавливаем IN_DIR по первому файлу для корректного сохранения рядом
+    set "CLEAN_PATH=%~1"
+    echo !CLEAN_PATH!>>"!TEMP_LIST!"
     if "!IN_DIR!"=="%CD%" (
-        for %%I in ("!ITEM_PATH!") do set "IN_DIR=%%~dpI"
+        for %%I in ("%~1") do set "IN_DIR=%%~dpI"
     )
+    shift
+    goto ARG_LOOP
 )
 
 shift
@@ -127,7 +126,7 @@ if "!COPY_OTHERS!"=="1" (set "TXT_COPY=%C_YELLOW%КОПИРОВАТЬ%C_RESET%")
 if "!VID_PRESET_MODE!"=="1" (set "V_NAME=H.264 [Совместимость]") else (set "V_NAME=H.265 [Макс. сжатие]")
 
 cls
-echo %C_WHITE%MEDIA OPTIMIZER v5.4 STABLE%C_RESET%
+echo %C_WHITE%MEDIA OPTIMIZER v5.5 STABLE%C_RESET%
 echo ------------------------------------------------------------------------------
 echo %C_WHITE%[1] Источник:%C_RESET%       "!DISPLAY_IN!\"
 if "!AUTO_BACKUP_ROOT!"=="" (
@@ -276,10 +275,8 @@ set "SAME_FOLDER_MODE=0"
 if "!AUTO_BACKUP_ROOT!"=="" (
     set "SAME_FOLDER_MODE=1"
     if "!IS_DRAG_FILES!"=="1" (
-        :: Для перетащенных файлов сохраняем прямо в их родную папку
         set "TARGET_DIR=!IN_DIR!"
     ) else (
-        :: Для папок создаем подпапку optimized
         set "TARGET_DIR=!IN_DIR!\optimized"
     )
 ) else (
@@ -542,7 +539,7 @@ for /f "usebackq delims=" %%F in ("!TEMP_LIST!") do (
 
 if exist "!TEMP_LIST!" del "!TEMP_LIST!" >nul
 
-title Media Optimizer v5.4 STABLE - ГОТОВО
+title Media Optimizer v5.5 STABLE - ГОТОВО
 echo ------------------------------------------------------------------------------
 echo.
 echo %C_GREEN%ГОТОВО! Обработано файлов: !CURRENT_IDX!%C_RESET%
